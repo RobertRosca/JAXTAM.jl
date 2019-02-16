@@ -165,6 +165,7 @@ function _add_append_publicity!(mission::Mission, append_df::DataFrames.DataFram
     n  = Dates.now()
     pd = Array{DateTime,1}(master_df[:public_date])
 
+    @info("Checking publicity")
     append_df[:publicity] = map(t->n>t, pd)
 
     return append_df
@@ -173,17 +174,26 @@ end
 function _add_append_logged_vars!(mission::Mission, append_df::DataFrames.DataFrame, master_df::DataFrames.DataFrame)
     obs_count = size(append_df, 1)
 
-    append_logged      = falses(obs_count)
-    append_downloaded  = falses(obs_count)
-    append_error       = falses(obs_count)
-    append_error_stage = Array{String,1}(undef, obs_count)
+    append_logged        = falses(obs_count)
+    append_downloaded    = falses(obs_count)
+    append_error         = falses(obs_count)
+    append_error_stage   = Array{String,1}(undef, obs_count)
+    append_report_exists = falses(obs_count)
+    append_report_path   = Array{String,1}(undef, obs_count)
 
+    full_e_range = _mission_good_e_range(mission)
+
+    lpad_digits = floor(Int, log10(obs_count))
+
+    @info("Looping through logs")
     for (i, obs_row) in enumerate(DataFrames.eachrow(master_df))
+        print("\r\t Log $(lpad(string(i), lpad_digits, "0"))/$obs_count")
         log_path         = _log_path(mission, obs_row)
         log_exists       = isfile(log_path)
         append_logged[i] = log_exists
 
         append_error_stage[i] = ""
+        append_report_path[i] = ""
 
         if log_exists
             log_contents = _log_query(mission, master_df[i, :])
@@ -196,52 +206,30 @@ function _add_append_logged_vars!(mission::Mission, append_df::DataFrames.DataFr
                 append_error[i] = true
                 append_error_stage[i] = join([string(k) for k in keys(log_contents["errors"])], ", ")
             end
+
+            if haskey(log_contents, "web")
+                if length(log_contents["web"]) > 0
+                    append_report_exists[i] = true
+                    if haskey(log_contents["web"], full_e_range)
+                        append_report_path[i] = log_contents["web"][full_e_range]
+                    else
+                        append_report_path[i] = first(log_contents["web"])[2]  # First value in dict
+                    end
+                end
+            end
         else
             continue
         end
     end
 
-    append_df[:logged]      = append_logged
-    append_df[:downloaded]  = append_downloaded
-    append_df[:error]       = append_error
-    append_df[:error_stage] = append_error_stage
-end
+    print(" - done\n")
 
-function _add_append_report!(mission::Mission, append_df::DataFrames.DataFrame, master_df::DataFrames.DataFrame)
-    append_report_path   = Array{String,1}(undef, size(append_df, 1))
-    append_report_exists = falses(size(append_df, 1))
-
-    full_e_range = _mission_good_e_range(mission)
-
-    logged_indecies     = findall(append_df[:logged])
-    not_logged_indecies = findall(append_df[:logged].==false)
-
-    append_report_path[not_logged_indecies] .= ""
-
-    @info("Looping through reports")
-
-    obs_count = length(logged_indecies)
-    zp = floor(Int, log10(obs_count))
-
-    c = 0
-    for i in logged_indecies
-        c += 1; print("Obs $(lpad(string(c), zp, "0"))/$obs_count")
-        web_reports = _log_query(mission, master_df[i, :], "web"; surpress_warn=true)
-
-        if ismissing(web_reports)
-            append_report_path[i] = ""
-        elseif haskey(web_reports, full_e_range)
-            append_report_path[i]   = web_reports[full_e_range]
-            append_report_exists[i] = true
-        else
-            append_report_path[i]   = first(web_reports)[2] # First value in dict
-            append_report_exists[i] = true
-        end
-    end
-
+    append_df[:logged]        = append_logged
+    append_df[:downloaded]    = append_downloaded
+    append_df[:error]         = append_error
+    append_df[:error_stage]   = append_error_stage
     append_df[:report_exists] = append_report_exists
     append_df[:report_path]   = append_report_path
-    return 
 end
 
 """
@@ -256,7 +244,6 @@ function _append_gen(mission::Mission, master_df::DataFrames.DataFrame)
 
     _add_append_publicity!(mission, append_df, master_df)
     _add_append_logged_vars!(mission, append_df, master_df)
-    _add_append_report!(mission, append_df, master_df)
 
     return append_df
 end
