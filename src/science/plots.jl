@@ -552,12 +552,22 @@ FFTSpec(fs::JAXTAM.FFTData) = FFTSpec(fs.mission, fs.instrument, fs.obsid, fs.e_
 function _plot_sgram(sgram_freq, sgram_power, sgram_bounds, sgram_groups,
         e_range, obsid, bin_time_pow2, bin_size, bin_time, rebin, size_in, disable_x=true)
 
+    # if size(sgram_power) == 
+
     x_tick_approx = exp10.(-1:1:4)
     x_ticks = [findfirst(f->f>=x_lim, sgram_freq) for x_lim in x_tick_approx]
     x_ticks = unique(x_ticks)
     x_ticks = x_ticks[x_ticks.!=nothing]
-
-    heatmap(sgram_power, size=size_in, fill=true)
+    
+    try
+        heatmap(sgram_power, size=size_in, fill=true)
+    catch err
+        if typeof(err) != InterruptException
+            throw(JAXTAMError("Error plotting spectrogram", :plot, err))
+        else
+            rethrow(err)
+        end
+    end
     xaxis!(xticks=x_ticks, xformatter=yi->sgram_freq[Int(yi)], xlab="Freq (Hz - log10)")
 
     title!("Spectrogram - $(obsid) - $e_range keV - 2^$(bin_time_pow2) bt - $(bin_size*bin_time) bs - $rebin rebin")
@@ -583,6 +593,11 @@ function plot_sgram(fs::Dict{Symbol,Dict{Int64,JAXTAM.FFTData}};
         bin_time_pow2 = Int(log2(example.bin_time))
 
         sgram_freq, sgram_power, sgram_bounds, sgram_groups = fspec_rebin_sgram(fs[instrument], rebin=rebin)
+
+        if size(sgram_power, 2) == 1
+            @warn "sgram_power only has one dimension, cannot plot spectrogram"
+            return sgram_instrument_plots
+        end
 
         src_ctrate = mean(fs[instrument][-1].src_ctrate); bkg_ctrate = mean(fs[instrument][-1].bkg_ctrate)
         rms_factor = 1
