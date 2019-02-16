@@ -218,7 +218,14 @@ function _add_append_report!(mission::Mission, append_df::DataFrames.DataFrame, 
 
     append_report_path[not_logged_indecies] .= ""
 
+    @info("Looping through reports")
+
+    obs_count = length(logged_indecies)
+    zp = floor(Int, log10(obs_count))
+
+    c = 0
     for i in logged_indecies
+        c += 1; print("Obs $(lpad(string(c), zp, "0"))/$obs_count")
         web_reports = _log_query(mission, master_df[i, :], "web"; surpress_warn=true)
 
         if ismissing(web_reports)
@@ -244,6 +251,8 @@ Runs all the `_add_append` functions, returns the full `append_df`
 """
 function _append_gen(mission::Mission, master_df::DataFrames.DataFrame)
     append_df = DataFrame(obsid=master_df[:obsid])
+
+    @info("Generating append table, this may take some time")
 
     _add_append_publicity!(mission, append_df, master_df)
     _add_append_logged_vars!(mission, append_df, master_df)
