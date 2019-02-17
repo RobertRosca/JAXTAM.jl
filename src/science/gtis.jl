@@ -37,6 +37,11 @@ function _lc_filter_gtis(mission::Mission, instrument::Symbol, obsid::String, e_
 
     @info "               -> prelim. excluded $excluded_gti_count GTIs under $(min_gti_sec)s"
 
+    if excluded_gti_count == length(gti_groups)
+        # All GTIs have been excluded
+        throw(JAXTAMError("All GTIs under $(min_gti_sec)s, none left", :gtis, BoundsError(Any[], (1,))))
+    end
+
     # Do this as the first GTI being zero screws with the initial start index
     # in the upcoming `for gtis` loop
     if gti_times[1, 1] == 0

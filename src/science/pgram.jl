@@ -37,6 +37,11 @@ function _pgram(lc::BinnedData, pg_type, group; maximum_frequency=:auto)
     freq, power = (missing, missing)
     if group == 0 # Using whole lightcurve
         lc_groups = _group_return(lc; min_length_sec=16)
+
+        if length(lc_groups) == 0
+            throw(JAXTAMError("No groups found for `min_length_sec=16`", :pgram))
+        end
+
         lc_group_counts = vcat([lc[2].counts for lc in lc_groups]...)
         lc_group_times  = vcat([lc[2].times for lc in lc_groups]...)
         freq, power = _pgram(lc_group_counts, lc_group_times, lc.bin_time, pg_type; maximum_frequency=maximum_frequency)

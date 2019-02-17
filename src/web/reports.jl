@@ -115,16 +115,27 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
     # Expect five 'groupless' plots: lightcurve, periodogram, powerspectra, spectrogram, pulsations
     if img_count_groupless < 5 || overwrite
         lc = _error_wrapper(JAXTAM.lcurve, mission, obs_row, 2.0^0; e_range=e_range)
+        # If the initial 1s lightcurve failed, everything else will fail, so just exit now
+        lc == nothing ? (return nothing) : ""
+
         _error_wrapper(JAXTAM.plot, lc; save=true, mission=mission, obs_row=obs_row)
         _error_wrapper(JAXTAM.plot_groups, lc; save=true, size_in=(1140,400/2), mission=mission, obs_row=obs_row)
+
         pg = _error_wrapper(JAXTAM.pgram, lc, mission=mission, obs_row=obs_row)
-        _error_wrapper(JAXTAM.plot, pg; save=true, mission=mission, obs_row=obs_row)
-        pg = _error_wrapper(JAXTAM.pgram, lc; per_group=true, mission=mission, obs_row=obs_row)
-        _error_wrapper(JAXTAM.plot_groups, pg; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
+        if pg != nothing
+            # Only try plotting the periodogram if there is one
+            _error_wrapper(JAXTAM.plot, pg; save=true, mission=mission, obs_row=obs_row)
+            pg = _error_wrapper(JAXTAM.pgram, lc; per_group=true, mission=mission, obs_row=obs_row)
+            _error_wrapper(JAXTAM.plot_groups, pg; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
+        end
+        
         lc = nothing; pg = nothing; GC.gc()
 
         lc = _error_wrapper(JAXTAM.lcurve, mission, obs_row, 2.0^-13; e_range=e_range)
+        lc == nothing ? (return nothing) : ""
+
         gtis = _error_wrapper(JAXTAM.gtis, mission, obs_row, 2.0^-13; lcurve_data=lc, e_range=e_range)
+        gtis == nothing ? (return nothing) : ""
         lc = nothing; 
 
         fs = _error_wrapper(JAXTAM.fspec, mission, obs_row, 2.0^-13, 128; gtis_data=gtis, e_range=e_range)
