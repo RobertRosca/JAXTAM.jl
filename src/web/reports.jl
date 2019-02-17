@@ -17,6 +17,57 @@ function _plot_fspec_grid(fs::Dict{Symbol,Dict{Int64,JAXTAM.FFTData}},
     savefig(example, obs_row, example.e_range; plot_name="grid")
 end
 
+# Sort of works but doesn't
+# macro error_wrapper(mission, obs_row, func)
+#     local escaped_obs_row = esc(obs_row)
+
+#     return quote
+#         local _wrapped_result = nothing
+#         try
+#             _wrapped_result = $func
+#         catch err
+#             if typeof(err) == JAXTAMError
+#                 _wrapped_result = err
+#                 _log_add($mission, $escaped_obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
+#                 @warn err
+#             else
+#                 rethrow(err)
+#             end
+#         end
+
+#         _wrapped_result
+#     end
+# end
+
+function _error_wrapper(func, args...; mission=nothing, obs_row=nothing, kwargs...)
+    if mission == nothing
+        # Assume first arg is mission
+        @assert args[1] isa Mission
+        mission = args[1]
+    end
+
+    if obs_row == nothing
+        # Assume second arg is obs_row or obsid
+        if args[2] isa String
+            obs_row = master_query(mission, :obsid, args[2])
+        elseif args[2] isa DataFrameRow
+            obs_row = args[2]
+        end
+    end
+
+    try
+        return func(args...; kwargs...)
+    catch err
+        if typeof(err) == JAXTAMError
+            _log_add(mission, obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
+            @warn err
+            return nothing
+        else
+            rethrow(err)
+        end
+    end
+end
+
 """
     report(::Mission, ::DataFrameRow; e_range::Tuple{Float64,Float64}, overwrite::Bool, nuke::Bool, update_masterpage::Bool)
 
@@ -50,17 +101,7 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
     end
 
     if ismissing(_log_query(mission, obs_row, "meta", :downloaded; surpress_warn=true)) || !_log_query(mission, obs_row, "meta", :downloaded)
-        try
-            download(mission, obs_row)
-        catch err
-            if typeof(err) == JAXTAMError
-                _log_add(mission, obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
-                @warn err
-                return nothing
-            else
-                rethrow(err)
-            end
-        end
+        _error_wrapper(download, (mission, obs_row))
     end
 
     if !ismissing(JAXTAM._log_query(mission, obs_row, "errors", :read_cl; surpress_warn=true))
@@ -73,69 +114,42 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
     img_count_groupless = ismissing(images) ? 0 : size(filter(x->ismissing(x[:group]), images), 1)
     # Expect five 'groupless' plots: lightcurve, periodogram, powerspectra, spectrogram, pulsations
     if img_count_groupless < 5 || overwrite
-        try
-            lc = JAXTAM.lcurve(mission, obs_row, 2.0^0; e_range=e_range)
-            JAXTAM.plot(lc; save=true); JAXTAM.plot_groups(lc; save=true, size_in=(1140,400/2))
-            pg = JAXTAM.pgram(lc); JAXTAM.plot(pg; save=true);
-            pg = JAXTAM.pgram(lc; per_group=true); JAXTAM.plot_groups(pg; save=true, size_in=(1140,600/2));
-            lc = nothing; pg = nothing; GC.gc()
-        catch err
-            if typeof(err) == JAXTAMError
-                _log_add(mission, obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
-                @warn err
-            else
-                rethrow(err)
-            end
-        end
+        lc = _error_wrapper(JAXTAM.lcurve, mission, obs_row, 2.0^0; e_range=e_range)
+        _error_wrapper(JAXTAM.plot, lc; save=true, mission=mission, obs_row=obs_row)
+        _error_wrapper(JAXTAM.plot_groups, lc; save=true, size_in=(1140,400/2), mission=mission, obs_row=obs_row)
+        pg = _error_wrapper(JAXTAM.pgram, lc, mission=mission, obs_row=obs_row)
+        _error_wrapper(JAXTAM.plot, pg; save=true, mission=mission, obs_row=obs_row)
+        pg = _error_wrapper(JAXTAM.pgram, lc; per_group=true, mission=mission, obs_row=obs_row)
+        _error_wrapper(JAXTAM.plot_groups, pg; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
+        lc = nothing; pg = nothing; GC.gc()
 
-        try
-            lc = JAXTAM.lcurve(mission, obs_row, 2.0^-13; e_range=e_range)
-            gtis = JAXTAM.gtis(mission, obs_row, 2.0^-13; lcurve_data=lc, e_range=e_range); lc = 0
+        lc = _error_wrapper(JAXTAM.lcurve, mission, obs_row, 2.0^-13; e_range=e_range)
+        gtis = _error_wrapper(JAXTAM.gtis, mission, obs_row, 2.0^-13; lcurve_data=lc, e_range=e_range)
+        lc = nothing; 
 
-            fs = JAXTAM.fspec(mission, obs_row, 2.0^-13, 128; gtis_data=gtis, e_range=e_range)
-            @info "Plotting fspec grid";    JAXTAM._plot_fspec_grid(fs, obs_row)
-            @info "Plotting fspec groups";  JAXTAM.plot_groups(fs; save=true, size_in=(1140,600/2))
-            @info "Plotting sgram";         JAXTAM.plot_sgram(fs;  save=true, size_in=(1140,600))
-            @info "Plotting pulses";        JAXTAM.plot_pulses_candle(fs; save=true, size_in=(1140,600/2))
-            @info "Plotting pulses groups"; JAXTAM.plot_pulses_candle_groups(fs; save=true, size_in=(1140,600/2))
+        fs = _error_wrapper(JAXTAM.fspec, mission, obs_row, 2.0^-13, 128; gtis_data=gtis, e_range=e_range)
+        if fs != nothing # Only try plotting if fspec didn't fail
+            @info "Plotting fspec grid"
+            _error_wrapper(JAXTAM._plot_fspec_grid, fs, obs_row, mission=mission, obs_row=obs_row)
+            @info "Plotting fspec groups"
+            _error_wrapper(JAXTAM.plot_groups, fs; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
+            @info "Plotting sgram"
+            _error_wrapper(JAXTAM.plot_sgram, fs;  save=true, size_in=(1140,600), mission=mission, obs_row=obs_row)
+            @info "Plotting pulses"
+            _error_wrapper(JAXTAM.plot_pulses_candle, fs; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
+            @info "Plotting pulses groups"
+            _error_wrapper(JAXTAM.plot_pulses_candle_groups, fs; save=true, size_in=(1140,600/2), mission=mission, obs_row=obs_row)
             fs = 0; GC.gc()
-        catch err
-            if typeof(err) == JAXTAMError
-                _log_add(mission, obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
-                @warn err
-            else
-                rethrow(err)
-            end
         end
-
-        # Disable second 64 s power spectra plots
-        # fs = JAXTAM.fspec(mission_name, obs_row, 2.0^-13, 64)
-        # JAXTAM._plot_fspec_grid(fs, obs_row, mission_name, 2.0^-13, "fspec/64.0/", "fspec.png")
-        # JAXTAM.plot_groups(fs; save=true, size_in=(1140,600/2))
-        # JAXTAM.plot_sgram(fs;  save=true, size_in=(1140,600/2))
-        # JAXTAM.plot_pulses_candle(fs; save=true, size_in=(1140,600/2))
-        # fs = 0; GC.gc()
-
-        # _call_all_espec(mission, obs_row)
     end
 
-    sp = try
-        _webgen_subpage(mission, obs_row; e_range=e_range)
-    catch err
-        if typeof(err) == JAXTAMError 
-            _log_add(mission, obs_row, Dict{String,Any}("errors"=>Dict(err.step=>err)))
-            @warn err
-        else
-            rethrow(err)
-        end
-        return nothing
-    end
+    subpage_path = _error_wrapper(_webgen_subpage, mission, obs_row; e_range=e_range)
 
     if update_masterpage
         webgen_mission(mission)
     end
 
-    return sp
+    return subpage_paths
 end
 
 function report(mission::Mission, obsid::String; e_range=_mission_good_e_range(mission), overwrite=false, nuke=false, update_masterpage=true)

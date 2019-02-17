@@ -246,6 +246,10 @@ function fspec(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.Dat
             @info "Generating fspec for $instrument"
             fspec_data = _fspec(gtis_data[instrument], fspec_bin; pow2=pow2, fspec_bin_type=fspec_bin_type)
 
+            if length(fspec_data) == 0
+                throw(JAXTAMError("No GITs left in fspec", :fspec))
+            end
+
             if scrunched
                 @info "                       -> scrunching gtis"
                 fspec_data = _scrunch_sections(fspec_data)
