@@ -149,7 +149,7 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
         webgen_mission(mission)
     end
 
-    return subpage_paths
+    return subpage_path
 end
 
 function report(mission::Mission, obsid::String; e_range=_mission_good_e_range(mission), overwrite=false, nuke=false, update_masterpage=true)
