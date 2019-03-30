@@ -161,7 +161,7 @@ version = "0.38.1"
 deps = ["Test"]
 git-tree-sha1 = "7666a808e923093dc402a84b2e0f0d0405dc68f6"
 repo-rev = "master"
-repo-url = "git@github.com:RobertRosca/Hyperscript.jl.git"
+repo-url = "https://github.com/RobertRosca/Hyperscript.jl.git"
 uuid = "61f73626-e61e-46c8-aded-7ef67e964bac"
 version = "0.0.3"
 
