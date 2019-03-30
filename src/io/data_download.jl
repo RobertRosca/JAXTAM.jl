@@ -29,6 +29,8 @@ function download(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.
         end
         _log_add(mission, obs_row, Dict("meta"=>Dict(:downloaded=>true)))
     end
+
+    return nothing
 end
 
 function download(mission::Mission, obs_rows::DataFrames.DataFrame; overwrite=false)
