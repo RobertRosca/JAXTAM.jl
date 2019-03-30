@@ -25,23 +25,27 @@ needs to be done to ensure the `.feather` file is saved/read correctly
 TODO: Make this less... stupid
 """
 function _type_master_df!(master_df)
-    nt_converter = (name=string, ra=float, dec=float, lii=float, bii=float, roll_angle=float,
-        time=Dates.DateTime, end_time=Dates.DateTime, obsid=string, exposure=float, exposure_a=float,
-        exposure_b=float, ontime_a=float, ontime_b=float, observation_mode=string, instrument_mode=string,
-        spacecraft_mode=string, slew_mode=string, time_awarded=float, num_fpm=Meta.parse,
-        processing_status=string, processing_date=Dates.DateTime,public_date=Dates.DateTime,
-        processing_version=string, num_processed=Meta.parse, caldb_version=String, software_version=string,
-        prnb=string, abstract=string, subject_category=string, category_code=Meta.parse,priority=string,
-        country=string, data_gap=Meta.parse, nupsdout=Meta.parse, solar_activity=string, coordinated=string,
-        issue_flag=Meta.parse, comments=string, satus=string,  pi_lname=string, pi_fname=string,
-        cycle=Meta.parse, obs_type=string, title=string, remarks=string)
+    nt_converter = (name=String, ra=Float64, dec=Float64, lii=Float64, bii=Float64, roll_angle=Float64,
+        time=Dates.DateTime, end_time=Dates.DateTime, obsid=String, exposure=Float64, exposure_a=Float64,
+        exposure_b=Float64, ontime_a=Float64, ontime_b=Float64, observation_mode=String, instrument_mode=String,
+        spacecraft_mode=String, slew_mode=String, time_awarded=Float64, num_fpm=Int64,
+        processing_status=String, processing_date=Dates.DateTime,public_date=Dates.DateTime,
+        processing_version=String, num_processed=Int64, caldb_version=String, software_version=String,
+        prnb=String, abstract=String, subject_category=String, category_code=Int64, priority=String,
+        country=String, data_gap=Meta.parse, nupsdout=Meta.parse, solar_activity=String, coordinated=String,
+        issue_flag=Meta.parse, comments=String, satus=String, pi_lname=String, pi_fname=String,
+        cycle=Int64, obs_type=String, title=String, remarks=Union{String,Missing})
 
     for (name, coltype) in pairs(nt_converter)
         try
-            master_df[name] = coltype.(master_df[name])
+            if coltype in [String, Dates.DateTime, Union{String,Missing}]
+                master_df[name] = Array{coltype,1}(master_df[name])
+            else
+                master_df[name] = parse.(coltype, master_df[name])
+            end
         catch e
-            if typeof(e) != KeyError
-                @warn e
+            if !in(typeof(e), [KeyError, ArgumentError])
+                @warn "$name - $coltype - $e"
             end
         end
     end
