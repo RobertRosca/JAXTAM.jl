@@ -151,7 +151,7 @@ function _log_add(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.
     return log_new
 end
 
-function _log_query(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.DataFrame}, args...; surpress_warn=false)
+function _log_query(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.DataFrame}, args...; surpress_warn=true)
     log = _log_read(mission, obs_row)
 
     reply = log
