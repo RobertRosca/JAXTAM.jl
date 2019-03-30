@@ -214,7 +214,7 @@ function gtis(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.Data
         if ismissing(gti_files) || !haskey(gti_files, instrument) || overwrite
             @info "Missing gti files for $instrument"
 
-            if !all(haskey.(lcurve_data, instruments))
+            if !haskey(lcurve_data, instrument)
                 lcurve_data = lcurve(mission, obs_row, bin_time, e_range=e_range)
             end
 

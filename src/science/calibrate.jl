@@ -97,7 +97,7 @@ function calibrate(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames
     instruments = _mission_instruments(mission)
     cl_files    = _log_query(mission, obs_row, "data", :feather_cl)
 
-    if !all(haskey.(instrument_data, instruments))
+    if !haskey(instrument_data, instruments)
         instrument_data = read_cl(mission, obs_row)
         # Reload log after read_cl finishes
         cl_files        = _log_query(mission, obs_row, "data", :feather_cl)

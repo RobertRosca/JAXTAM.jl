@@ -75,7 +75,7 @@ function _read_fits_event(mission::Mission, fits_path::String)
     fits_header_df = DataFrame()
 
     for (i, key) in enumerate(keys(fits_header))
-        key = Symbol(replace(key, '-', '_')) # Colnames with `-` don't behave well with DataFrames/Feather
+        key = Symbol(replace(key, '-' => '_')) # Colnames with `-` don't behave well with DataFrames/Feather
         if typeof(fits_header[i]) == Nothing || fits_header[i] == ""
             fits_header_df[Symbol(key)] =  "empty" # Have to write something, or Feahter.jl errors saving ""
         else
@@ -183,7 +183,7 @@ function _read_cl_feather(path_events::String, path_gtis::String, path_meta::Str
     meta_srcrt = data_meta[1, :SRC_RT]
     meta_bkgrt = data_meta[1, :BKG_RT]
 
-    return InstrumentData(meta_missn, meta_inst, meta_obsid,
+    return InstrumentData(meta_missn, Symbol(meta_inst), string(meta_obsid),
         data_events, data_gtis, meta_start, meta_stop,
         meta_srcrt, meta_bkgrt, data_meta)
 end

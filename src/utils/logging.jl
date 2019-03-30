@@ -4,7 +4,7 @@ end
 
 function _log_entry(; kwargs...)
     template = OrderedDict(
-        :category     => String,
+        :category     => Union{String,Symbol},
         :e_range      => Union{String,Missing},
         :bin_time     => Union{String,Missing},
         :bin_size_sec => Union{Real,Missing},
@@ -59,7 +59,7 @@ function _log_entry(; kwargs...)
 
     if !haskey(kwargs, :path)
         path = "./"
-        [path=joinpath(path, string(v)) for (k, v) in zip(names(log_entry), convert(Array, log_entry)) if !in(k, [:kind_order, :value, :group, :path, :notes]) && !ismissing(v)]
+        [path=joinpath(path, string(v)) for (k, v) in zip(names(log_entry), convert(Matrix, log_entry)) if !in(k, [:kind_order, :value, :group, :path, :notes]) && !ismissing(v)]
     end
 
     if !haskey(kwargs, :file_name)

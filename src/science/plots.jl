@@ -43,11 +43,11 @@ function savefig(plot_data::JAXTAMData, obs_row::DataFrames.DataFrameRow{DataFra
         plot_name = string(plot_type)
     end
 
-    plot_path = if any(isa.(plot_data, types_unbinned))
+    plot_path = if any([isa(plot_data, tu) for tu in types_unbinned])
         savefig(mission, obs_row, e_range, plot_type, plot_name; kwargs...)
-    elseif any(isa.(plot_data, types_binned))
+    elseif any([isa(plot_data, tb) for tb in types_binned])
         savefig(mission, obs_row, e_range, plot_type, plot_name; bin_time=plot_data.bin_time, kwargs...)
-    elseif any(isa.(plot_data, types_binsec))
+    elseif any([isa(plot_data, tbs) for tbs in types_binsec])
         bss = plot_data.bin_time * plot_data.bin_size
         savefig(mission, obs_row, e_range, plot_type, plot_name; bin_time=plot_data.bin_time, bin_size_sec=bss, kwargs...)
     else

@@ -230,14 +230,18 @@ function fspec(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.Dat
     instruments = _mission_instruments(mission)
     fspec_files = _log_query(mission, obs_row, "data", :fspec, e_range)
 
-    fspec_path  = abspath(_obs_path_local(mission, obs_row; kind=:jaxtam), "JAXTAM", _log_query_path(; category=:data, kind=:fspec, e_range=e_range, bin_time=bin_time))
+    fspec_path  = abspath(
+        _obs_path_local(mission, obs_row; kind=:jaxtam),
+        "JAXTAM",
+        _log_query_path(; category=:data, kind=:fspec, e_range=e_range, bin_time=bin_time)
+    )
 
     fspecs = Dict{Symbol,Dict{Int64,JAXTAM.FFTData}}()
     for instrument in instruments
         if ismissing(fspec_files) || !haskey(fspec_files, instrument) || overwrite
             @info "Missing fspec files for $instrument"
 
-            if !all(haskey.(gtis_data, instruments))
+            if !haskey(gtis_data, instrument)
                 gtis_data = JAXTAM.gtis(mission, obs_row, bin_time, overwrite=overwrite_gtis, e_range=e_range)
             end
 

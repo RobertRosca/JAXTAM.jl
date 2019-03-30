@@ -95,13 +95,13 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
 
     if nuke
         GC.gc() # Required due to Feather.jl loading files lazily, meaning they can't be removed from disk
-                # until garbace collection runs and un-lazily-loads them
+                # until garbage collection runs and un-lazily-loads them
         ispath(path_jaxtam) ? rm(path_jaxtam, recursive=true) : false
         ispath(path_web)    ? rm(path_web,    recursive=true) : false
     end
 
     if ismissing(_log_query(mission, obs_row, "meta", :downloaded; surpress_warn=true)) || !_log_query(mission, obs_row, "meta", :downloaded)
-        _error_wrapper(download, (mission, obs_row))
+        _error_wrapper(download, mission, obs_row)
     end
 
     if !ismissing(JAXTAM._log_query(mission, obs_row, "errors", :read_cl; surpress_warn=true))
@@ -196,7 +196,7 @@ function report_all(mission::Mission, obs_row::DataFrames.DataFrameRow; e_ranges
 end
 
 function report_all(mission::Mission, obsid::String; e_ranges=[(0.2,12.0), (2.0,10.0), (0.2,2.0)], overwrite=false, nuke=false, update_masterpage=true)
-    obs_row = _master_query(mission, :obsid, obsid)
+    obs_row = master_query(mission, :obsid, obsid)
 
     return report_all(mission, obs_row; e_ranges=e_ranges, overwrite=overwrite, nuke=nuke, update_masterpage=update_masterpage)
 end

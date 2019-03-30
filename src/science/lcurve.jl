@@ -335,7 +335,7 @@ function lcurve(mission::Mission, obs_row::DataFrames.DataFrameRow{DataFrames.Da
         if ismissing(lc_files) || !haskey(lc_files, instrument) || overwrite
             @info "Missing lcurve files for $instrument"
             
-            if !all(haskey.(calibrated_data, instruments))
+            if !haskey(calibrated_data, instruments)
                 calibrated_data = calibrate(mission, obs_row)
             end
 
