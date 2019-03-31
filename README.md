@@ -199,7 +199,7 @@ help?> JAXTAM.report
 
 ```
 
-As you can see, there are to ways to use this function: either give it `obs_rows` from a query result, or an `obsid`
+As you can see, there are two ways to use this function: either give it `obs_rows` from a query result, or an `obsid`
 
 If you want to create reports for multiple observations, then basic list comprehension is the easiest way to do this:
 
@@ -257,7 +257,7 @@ This will queue up some observations which meet the filter criterea mentioned ab
 
 # Appendix
 
-Running these commands on Asimov should output:
+Installing on Asimov should show:
 
 ```
 srv01039:/home/robertr> cd Projects/
