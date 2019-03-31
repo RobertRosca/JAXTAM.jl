@@ -69,20 +69,30 @@ function _error_wrapper(func, args...; mission=nothing, obs_row=nothing, kwargs.
 end
 
 """
-    report(::Mission, ::DataFrameRow; e_range::Tuple{Float64,Float64}, overwrite::Bool, nuke::Bool, update_masterpage::Bool)
+    report(mission::Mission, obs_row::DataFrameRow; e_range::Tuple{Float64,Float64}=_mission_good_e_range(mission), overwrite::Bool, nuke::Bool=false, update_masterpage::Bool=true)
 
 Generates a report for the default energy range
 
 Creates plots for:
+
     * Lightcurve (+ grouped lightcurves)
+
     * Periodigram (+ grouped periodograms)
+
     * Power Spectra
+
         * :rms, full range, log-rebinned, log-log plot
+
         * :leahy, full range, log-rebinned, log-log plot
+
         * :leahy, 0 to 1 Hz, no rebin, linear-linear plot
+
         * :leahy, 1 to end Hz, no rebin, linear-linear plot
+
         * :leahy, 50 to end Hz, no regin, linear-linear plot
+
     * Spectrogram
+
     * Pulsation search plot
 
 Produces HTML report page
@@ -163,6 +173,13 @@ function report(mission, obs_row; e_range=_mission_good_e_range(mission), overwr
     return subpage_path
 end
 
+"""
+    report(mission::Mission, obsid::String; kwargs...)
+
+Multiple dispath to report(mission::Mission, obs_row::DataFrameRow; kwargs...)
+
+Uses `obsid` to select the observation
+"""
 function report(mission::Mission, obsid::String; e_range=_mission_good_e_range(mission), overwrite=false, nuke=false, update_masterpage=true)
     obs_row = master_query(mission, :obsid, obsid)
 
@@ -170,7 +187,7 @@ function report(mission::Mission, obsid::String; e_range=_mission_good_e_range(m
 end
 
 """
-    report_all(::Mission, ::DataFrameRow; e_ranges=[(0.2,12.0), (2.0,10.0), (0.2,2.0)], overwrite::Bool, nuke::Bool, update_masterpage::Bool)
+    report_all(::Mission, ::DataFrameRow; e_ranges=[(0.2,12.0), (2.0,10.0), (0.2,2.0)], overwrite::Bool=false, nuke::Bool=false, update_masterpage::Bool=true)
 
 Calls `report` with three default energy ranges
 """
@@ -195,6 +212,13 @@ function report_all(mission::Mission, obs_row::DataFrames.DataFrameRow; e_ranges
     end
 end
 
+"""
+    report_all(mission::Mission, obsid::String; kwargs...)
+
+Multiple dispath to report_all(mission::Mission, obs_row::DataFrameRow; kwargs...)
+
+Uses `obsid` to select the observation
+"""
 function report_all(mission::Mission, obsid::String; e_ranges=[(0.2,12.0), (2.0,10.0), (0.2,2.0)], overwrite=false, nuke=false, update_masterpage=true)
     obs_row = master_query(mission, :obsid, obsid)
 
