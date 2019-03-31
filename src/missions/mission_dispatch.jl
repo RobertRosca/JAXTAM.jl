@@ -32,6 +32,10 @@ Look at /src/missions/nicer.jl for an example. Put any custom mission functions 
 """
 abstract type Mission end
 
+if !isdir(joinpath(JAXTAM.__sourcedir__, "src/missions/custom"))
+    mkdir(joinpath(JAXTAM.__sourcedir__, "src/missions/custom"))
+end
+
 [include("base/$mission")   for mission in readdir(joinpath(JAXTAM.__sourcedir__,   "src/missions/base"))]
 [include("custom/$mission") for mission in readdir(joinpath(JAXTAM.__sourcedir__, "src/missions/custom"))]
 
