@@ -53,14 +53,14 @@ function mission_paths(mission::Mission; log_path::String=joinpath(JAXTAM.__sour
     end
 
     if !haskey(log_dict, mission_name) || overwrite
-        @warn "Mission not found in $log_path, please enter paths:"
+        @info "Mission not found in $log_path, please enter paths:"
         print("Download path: ");                 path_download = readline()
         print("JAXTAM (processed data) path: ");  path_jaxtam   = readline()
         print("Web (html reports) path: ");       path_web      = readline()
         print("RMF (caldb mission file) path: "); path_rmf      = readline()
         log_dict[mission_name] = (download=path_download, jaxtam=path_jaxtam, web=path_web, rmf=path_rmf)
         write(log_path, JSON.json(log_dict, 4))
-        @info "Wrote to $log_path" "Add custom keys in to JSON file manually if required"
+        @info "Wrote to $log_path \n Add custom keys in to JSON file manually if required"
     end
 
     # Return named tuple to prevent user from attempting to change the paths
