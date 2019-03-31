@@ -76,7 +76,7 @@ end
 function _add_obsid_url(df::Union{DataFrames.DataFrame, DataFrames.DataFrameRow}, path_web)
     obsid_url = Array{Union{Hyperscript.Node{Hyperscript.HTMLSVG},String},1}(undef, size(df, 1))
 
-    report_path_rel = replace(df[:report_path], (path_web=>"./"))
+    report_path_rel = replace(df[:report_path], (path_web=>"."))
 
     obsid_url[  df[:report_exists]] = [a(df[i, :obsid], href=report_path_rel[i]) for i in findall(df[:report_exists])]
     obsid_url[.!df[:report_exists]] = df[.!df[:report_exists], :obsid]
