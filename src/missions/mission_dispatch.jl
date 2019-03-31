@@ -64,7 +64,7 @@ function mission_paths(mission::Mission; log_path::String=joinpath(JAXTAM.__sour
     return NamedTuple{nt_keys}((values(log_dict[mission_name])))
 end
 
-function _obs_path_local(mission::Mission, obs_row::Union{DataFrames.DataFrame,DataFrameRow{DataFrame}}; kind::Symbol)
+function _obs_path_local(mission::Mission, obs_row::Union{DataFrames.DataFrame,DataFrameRow{DataFrame}}, kind::Symbol)
     return joinpath(mission_paths(mission)[kind], _clean_path_dots(_obs_path_server(mission, obs_row))[2:end])
 end
 
