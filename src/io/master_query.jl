@@ -31,11 +31,11 @@ function master_query_public(master_df::DataFrame, key_type::Symbol, key_value::
 
     if typeof(query_result) == DataFrames.DataFrameRow
         # Single row returned by master query
-        if query_result[:time] >= now() # time is in the future
+        if !query_result[:publicity]
             query_result = DataFrame() # empty dataframe returned
         end
     else
-        query_result = filter(x->x[:time]<=now(), query_result)
+        query_result = filter(x->x[:publicity], query_result)
     end
 
     return query_result    
@@ -46,5 +46,5 @@ function master_query_public(mission::Mission, key_type::Symbol, key_value::Any)
 end
 
 function master_query_public(mission::Mission)
-    return filter(x->x[:time]<=now(), master(mission))
+    return filter(x->x[:publicity], master(mission))
 end
